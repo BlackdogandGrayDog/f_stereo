@@ -5,14 +5,7 @@
         "name": "Debug FoundationStereo",
         "type": "python",
         "request": "launch",
-        "program": "${workspaceFolder}/scripts/run_demo.py",
-        "args": [
-          "--left_file", "./simulator/trj_6/L_00.png",
-          "--right_file", "./simulator/trj_6/R_00.png",
-          "--intrinsic_file", "./simulator/trj_6/K.txt",
-          "--ckpt_dir", "./pretrained_models/model_best_bp2.pth",
-          "--out_dir", "./simulator_outputs/trj_6"
-        ],
+        "program": "${workspaceFolder}/scripts/disparity_gen.py",
         "python": "/root/miniconda3/envs/foundation_stereo/bin/python",
         "console": "integratedTerminal",
         "env": {

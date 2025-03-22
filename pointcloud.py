@@ -3,10 +3,10 @@ import cv2
 import open3d as o3d
 
 # 🔹 Set file paths
-disparity_path = "hamlyn_outputs/rectified5/disp.npy"  # Path to disparity map (.npy)
-rgb_path = "hamlyn/rectified5/L_00.jpg"  # Path to original RGB image
-K_file = "hamlyn/rectified5/K.txt"  # Path to K.txt containing intrinsics & baseline
-output_ply_path = "hamlyn_outputs/rectified5/point_cloud.ply"   # Output colored point cloud
+disparity_path = "simulator_outputs/trj_6/disp.npy"  # Path to disparity map (.npy)
+rgb_path = "simulator/trj_6/L_00.png"  # Path to original RGB image
+K_file = "simulator/trj_6/K.txt"  # Path to K.txt containing intrinsics & baseline
+output_ply_path = "simulator_outputs/trj_6/point_cloud.ply"   # Output colored point cloud
 
 def load_camera_params(K_file):
     """ Reads K.txt to get the intrinsic matrix and baseline. """
