@@ -40,6 +40,7 @@ def suppress_external_warnings():
 
     return SuppressStd()
 
+#  Run stereo inference
 def run_stereo_inference(args_dict):
     # Set up logging and environment
     set_logging_format()
@@ -53,7 +54,7 @@ def run_stereo_inference(args_dict):
         cfg[k] = v
     args = OmegaConf.create(cfg)
 
-    logging.info(f"📦 Using pretrained model from: {args.ckpt_dir}")
+    # logging.info(f"📦 Using pretrained model from: {args.ckpt_dir}")
 
     # Initialize model + load weights (silencing noise)
     with suppress_external_warnings():
@@ -65,8 +66,8 @@ def run_stereo_inference(args_dict):
     model.eval()
 
     # Load input stereo pair
-    img0 = imageio.v2.imread(args.left_file)
-    img1 = imageio.v2.imread(args.right_file)
+    img0 = imageio.imread(args.left_file)
+    img1 = imageio.imread(args.right_file)
     scale = 1.0
     img0 = cv2.resize(img0, fx=scale, fy=scale, dsize=None)
     img1 = cv2.resize(img1, fx=scale, fy=scale, dsize=None)
@@ -79,7 +80,7 @@ def run_stereo_inference(args_dict):
     img0, img1 = padder.pad(img0, img1)
 
     # Inference with timing
-    logging.info("🚀 Running inference...")
+    logging.info(f"🚀 Running inference for {args.left_file} ...")
     start_time = time.time()
     with torch.amp.autocast("cuda"):
         disp = model.forward(img0, img1, iters=32, test_mode=True)
@@ -92,20 +93,49 @@ def run_stereo_inference(args_dict):
     # Postprocess & Save
     disp = padder.unpad(disp.float())
     disp = disp.data.cpu().numpy().reshape(H, W)
-    np.save(f"{args.out_dir}/disp.npy", disp)
+
+    base_name = args.out_name if "out_name" in args else "disp"
+    np.save(f"{args.out_dir}/{base_name}.npy", disp)
+
     vis = vis_disparity(disp)
     vis = np.concatenate([img0_ori, vis], axis=1)
-    imageio.imwrite(f"{args.out_dir}/vis.png", vis)
-    logging.info(f"💾 Disparity saved: {args.out_dir}/disp.npy")
-    logging.info(f"🖼️ Visualization saved: {args.out_dir}/vis.png")
+    imageio.imwrite(f"{args.out_dir}/{base_name}.png", vis)
+
+    logging.info(f"💾 Disparity saved: {args.out_dir}/{base_name}.npy")
+    logging.info(f"🖼️ Visualization saved: {args.out_dir}/visualisation/{base_name}.png")
+    logging.info("-------------------------------- \n")
+
+
+#  Run all stereo pairs in a directory
+def run_all_stereo_pairs(base_dir):
+    left_dir = os.path.join(base_dir, "image01")
+    right_dir = os.path.join(base_dir, "image02")
+    out_dir = os.path.join(base_dir, "disparity_map")
+    ckpt_path = "./pretrained_models/model_best_bp2.pth"
+
+    os.makedirs(out_dir, exist_ok=True)
+    left_files = sorted(os.listdir(left_dir))
+
+    for fname in left_files:
+        left_path = os.path.join(left_dir, fname)
+        right_path = os.path.join(right_dir, fname)
+
+        if not os.path.exists(right_path):
+            logging.warning(f"⚠️ Skipping {fname}: Right image not found.")
+            continue
+
+        args_dict = {
+            'left_file': left_path,
+            'right_file': right_path,
+            'ckpt_dir': ckpt_path,
+            'out_dir': out_dir,
+            'out_name': os.path.splitext(fname)[0]
+        }
+
+        run_stereo_inference(args_dict)
+
 
 
 if __name__ == "__main__":
-    args_dict = {
-        'left_file': "./simulator/trj_6/L_00.png",
-        'right_file': "./simulator/trj_6/R_00.png",
-        'intrinsic_file': "./simulator/trj_6/K.txt",
-        'ckpt_dir': "./pretrained_models/model_best_bp2.pth",
-        'out_dir': "./simulator_outputs/trj_6"
-    }
-    run_stereo_inference(args_dict)
+    base_dir = "./datasets/rectified04"
+    run_all_stereo_pairs(base_dir)
