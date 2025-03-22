@@ -99,7 +99,8 @@ def run_stereo_inference(args_dict):
 
     vis = vis_disparity(disp)
     vis = np.concatenate([img0_ori, vis], axis=1)
-    imageio.imwrite(f"{args.out_dir}/{base_name}.png", vis)
+    os.makedirs(f"{args.out_dir}/visualisation", exist_ok=True)
+    imageio.imwrite(f"{args.out_dir}/visualisation/{base_name}.png", vis)
 
     logging.info(f"💾 Disparity saved: {args.out_dir}/{base_name}.npy")
     logging.info(f"🖼️ Visualization saved: {args.out_dir}/visualisation/{base_name}.png")
